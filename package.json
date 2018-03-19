@@ -52,9 +52,12 @@
     "eslint-plugin-jest": "*",
     "jest": "*",
     "jest-cli": "*",
+    "nock": "^9.2.3",
     "regenerator-runtime": "*"
   },
   "dependencies": {
-    "commander": "^2.14.1"
+    "axios": "^0.18.0",
+    "commander": "^2.14.1",
+    "mz": "^2.7.0"
   }
 }
