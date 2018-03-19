@@ -1,0 +1,60 @@
+{
+  "name": "page-loader",
+  "version": "0.1.0",
+  "description": "",
+  "main": "dist/index.js",
+  "bin": {
+    "page-loader": "dist/bin/page-loader.js"
+  },
+  "engines": {
+    "node": "9"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "test": "jest",
+    "watch": "jest --watch",
+    "babel-node": "babel-node",
+    "eslint": "eslint",
+    "build": "NODE_ENV=production babel src --out-dir dist --source-maps inline",
+    "prepublishOnly": "npm run build"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testPathIgnorePatterns": [
+      "<rootDir>/node_modules/",
+      "<rootDir>/__tests__/__fixtures__/"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Yorickov/project-lvl3-s194.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Yorickov/project-lvl3-s194/issues"
+  },
+  "keywords": [],
+  "author": "Yorickov",
+  "license": "ISC",
+  "homepage": "https://github.com/Yorickov/project-lvl3-s194#readme",
+  "devDependencies": {
+    "babel-cli": "*",
+    "babel-core": "*",
+    "babel-eslint": "*",
+    "babel-jest": "*",
+    "babel-plugin-transform-runtime": "*",
+    "babel-preset-env": "*",
+    "babel-preset-stage-0": "*",
+    "eslint": "*",
+    "eslint-config-airbnb-base": "*",
+    "eslint-plugin-import": "*",
+    "eslint-plugin-jest": "*",
+    "jest": "*",
+    "jest-cli": "*",
+    "regenerator-runtime": "*"
+  },
+  "dependencies": {
+    "commander": "^2.14.1"
+  }
+}
