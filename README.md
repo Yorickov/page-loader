@@ -8,4 +8,11 @@
 
 ```
 make install
+page-loader --help
+```
+## Example
+
+```
+$ page-loader --output /var/tmp https://hexlet.io/courses
+$ open /var/tmp/hexlet-io-courses.html
 ```
