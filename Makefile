@@ -8,8 +8,11 @@ build:
 start:
 	npm run babel-node -- src/bin/page-loader.js
 
+index:
+	npm run babel-node -- src/index.js
+
 load:
-	npm run babel-node -- dist/bin/page-loader.js --output /Users/yorickov/projects/js/hexlet/page-loader https://hexlet.io/courses
+	npm run babel-node -- src/bin/page-loader.js --output /Users/yorickov/projects/js/hexlet/temp
 
 help:
 	npm run babel-node -- src/bin/page-loader.js --help

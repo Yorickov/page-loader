@@ -3,33 +3,65 @@ import os from 'os';
 import nock from 'nock';
 import path from 'path';
 import axios from 'axios';
-import httpAdapter from 'axios/lib/adapters/http'; // no influence
+import httpAdapter from 'axios/lib/adapters/http';
 
 import pageLoader from '../src';
 
-axios.defaults.adapter = httpAdapter; // no influence
+axios.defaults.adapter = httpAdapter;
+nock.disableNetConnect();
 
+const host = 'http://hexlet.io';
+
+const getHtml = '/courses';
 const pathToHtml = '__tests__/__fixtures__/page.html';
-const urlStr = 'https://hexlet.io/courses';
-const fileName = 'hexlet-io-courses.html';
+const htmlPageName = 'hexlet-io-courses.html';
+
+const getImg = '/courses/assets/celt.jpg';
+const pathToImg = '__tests__/__fixtures__/celt.jpg';
+const imgName = 'hexlet-io-courses_files/assets-celt.jpg';
+
+const getCss = '/courses/assets/main.css';
+const pathToCss = '__tests__/__fixtures__/main.css';
+const cssName = 'hexlet-io-courses_files/assets-main.css';
+
+const getScript = '/courses/assets/script.js';
+const pathToScript = '__tests__/__fixtures__/script.js';
+const scriptName = 'hexlet-io-courses_files/assets-script.js';
 
 describe('load html', () => {
   const osTempDir = os.tmpdir();
   let pathToTemp;
   let testHtml;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     pathToTemp = await fs.mkdtemp(path.join(osTempDir, 'temp'));
     testHtml = await fs.readFile(pathToHtml, 'utf8');
-
-    nock(urlStr)
-      .get('') // '/' - Error 'Nock: No match for request'
-      .replyWithFile(200, pathToHtml);
   });
 
   it('testing...', async () => {
-    await pageLoader(urlStr, pathToTemp);
-    const fileContent = await fs.readFile(path.join(pathToTemp, fileName), 'utf8');
-    expect(fileContent).toEqual(testHtml);
+    nock(host)
+      .get(getHtml)
+      .replyWithFile(200, pathToHtml)
+      .get(getImg)
+      .replyWithFile(200, pathToImg)
+      .get(getCss)
+      .replyWithFile(200, pathToCss)
+      .get(getScript)
+      .replyWithFile(200, pathToScript);
+
+    await pageLoader(`${host}${getHtml}`, pathToTemp);
+
+    const fileContent = await fs.readFile(path.join(pathToTemp, htmlPageName), 'utf8');
+    console.log(pathToTemp);
+    expect(fileContent).not.toMatch(testHtml);
+
+    const checkFile = fileName => fs.statSync(path.join(pathToTemp, fileName)).isFile();
+
+    const checkImg = checkFile(imgName);
+    expect(checkImg).toBeTruthy();
+    const checkCss = checkFile(cssName);
+    expect(checkCss).toBeTruthy();
+    const checkScript = checkFile(scriptName);
+    expect(checkScript).toBeTruthy();
   });
 });
