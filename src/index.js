@@ -4,6 +4,14 @@ import fs from 'mz/fs';
 import url from 'url';
 import cheerio from 'cheerio';
 import _ from 'lodash';
+import debug from 'debug';
+
+import AbsoluteLink from './utils/AbsoluteLink';
+import RelativeLink from './utils/RelativeLink';
+
+const logger = debug('page-loader');
+
+logger('start');
 
 const makeAssetsName = link => link
   .split('/')
@@ -19,16 +27,17 @@ const makeHtmlAndFolder = (urlStr) => {
   return { htmlPageName, htmlDir };
 };
 
+const buildLink = (link, urlHost) => {
+  const { host, pathname } = url.parse(link);
+  const { host: baseHost } = url.parse(urlHost);
+  return host ? new AbsoluteLink(link, baseHost, pathname, host)
+    : new RelativeLink(link, urlHost);
+};
+
 const tagsMapping = {
   script: 'src',
   link: 'href',
   img: 'src',
-};
-
-const processLink = (link, urlHost) => {
-  const { host } = url.parse(link); // hostanme?
-  const { host: baseHost } = url.parse(urlHost);
-  return host ? host === baseHost : !/^http/.test(link);
 };
 
 const getLinks = (html, urlHost) => {
@@ -38,11 +47,52 @@ const getLinks = (html, urlHost) => {
     .map((tag) => {
       const attrb = tagsMapping[tag];
       const links = $(`${tag}[${attrb}]`)
-        .map((index, item) => $(item).attr(attrb))
-        .filter((index, item) => processLink(item, urlHost));
+        .map((index, item) => {
+          const attr = $(item).attr(attrb);
+          return buildLink(attr, urlHost);
+        })
+        .filter((index, item) => item.isValidate());
       return [...links];
     });
   return _.uniq(_.flatten(refs));
+};
+
+const getResourses = (contentHtml, urlQuery) => {
+  const links = getLinks(contentHtml, urlQuery);
+  logger(`got links: ${links}`);
+  return Promise.all(links.map(link =>
+    axios
+      .get(link.getAbsUrl(), { responseType: 'arraybuffer' })
+      .then((res) => {
+        logger(`${link.getAbsUrl()}: downloading...`);
+        return ({ link, contentAssets: res.data });
+      })))
+    .then(resourses => ({ resourses, contentHtml }))
+    .catch(err => logger(err.message));
+};
+
+const writeResourses = (resourses, contentHtml, pathToAssets) =>
+  Promise.all(resourses.map(({ link, contentAssets }) => {
+    const pathToResourse = path.join(pathToAssets, makeAssetsName(link.getLocal()));
+    return fs.writeFile(pathToResourse, contentAssets);
+  }))
+    .then(() => {
+      logger('resourses written');
+      const links = resourses.map(({ link }) => link);
+      return ({ links, contentHtml });
+    });
+
+const replaceLinks = (links, contentHtml, pathToHtml, htmlDir) => {
+  let contentHtmlPage = contentHtml;
+
+  links.forEach((link) => {
+    const replacer = new RegExp(link.getOriginLink(), 'g');
+    contentHtmlPage = contentHtmlPage
+      .replace(replacer, path.join(htmlDir, makeAssetsName(link.getLocal())));
+  });
+
+  logger('replaced links in html');
+  return fs.writeFile(pathToHtml, contentHtmlPage);
 };
 
 export default (urlQuery, pathToDir = path.resolve('temp')) => {
@@ -50,36 +100,15 @@ export default (urlQuery, pathToDir = path.resolve('temp')) => {
   const pathToHtml = path.resolve(pathToDir, htmlPageName);
   const pathToAssets = path.resolve(pathToDir, htmlDir);
   return axios
-    .get(urlQuery)
+    .get(urlQuery, { responseType: 'arraybuffer' })
     .then(res => fs.writeFile(pathToHtml, res.data))
-    .then(() => fs.mkdir(pathToAssets))
-    .then(() => fs.readFile(pathToHtml, 'utf8'))
-    .then((contentHtml) => {
-      const links = getLinks(contentHtml, urlQuery);
-      return Promise.all(links.map((link) => {
-        const newLink = /^http/.test(link) ? link : `${urlQuery}${link}`;
-        return axios
-          .get(newLink, { responseType: 'arraybuffer' })
-          .then(res => ({ link, contentAssets: res.data }));
-      }));
+    .then(() => {
+      logger('got and written html');
+      fs.mkdir(pathToAssets);
     })
-    .then(resourses =>
-      Promise.all(resourses.map(({ link, contentAssets }) => {
-        const pathToResourse = path.join(pathToAssets, makeAssetsName(link));
-        return fs.writeFile(pathToResourse, contentAssets);
-      })).then(() => Promise.resolve(resourses)))
-    .then(resourses =>
-      fs.readFile(pathToHtml, 'utf8')
-        .then((contentHtml) => {
-          let contentHtmlPage = contentHtml;
-
-          resourses.forEach(({ link }) => {
-            const replacer = new RegExp(link, 'g');
-            contentHtmlPage = contentHtmlPage
-              .replace(replacer, path.join(htmlDir, makeAssetsName(link)));
-          });
-          return fs.writeFile(pathToHtml, contentHtmlPage);
-        })
-        .catch(err => console.log(err)))
-    .catch(err => console.log(err));
+    .then(() => fs.readFile(pathToHtml, 'utf8'))
+    .then(contentHtml => getResourses(contentHtml, urlQuery))
+    .then(({ resourses, contentHtml }) => writeResourses(resourses, contentHtml, pathToAssets))
+    .then(({ links, contentHtml }) => replaceLinks(links, contentHtml, pathToHtml, htmlDir))
+    .catch(err => logger(err.message));
 };

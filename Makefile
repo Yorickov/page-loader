@@ -5,17 +5,14 @@ build:
 	rm -rf dist
 	npm run build
 
+loader:
+	DEBUG=page-loader page-loader --output /Users/yorickov/projects/js/hexlet/temp https://hexlet.io/courses
+
 start:
-	npm run babel-node -- src/bin/page-loader.js
+	npm run babel-node -- src/bin/page-loader.js --output /Users/yorickov/projects/js/hexlet/temp https://hexlet.io/courses
 
 index:
 	npm run babel-node -- src/index.js
-
-load:
-	npm run babel-node -- src/bin/page-loader.js --output /Users/yorickov/projects/js/hexlet/temp
-
-help:
-	npm run babel-node -- src/bin/page-loader.js --help
 
 test:
 	npm test
