@@ -52,7 +52,7 @@ describe('load html', () => {
     await pageLoader(`${host}${getHtml}`, pathToTemp);
 
     const fileContent = await fs.readFile(path.join(pathToTemp, htmlPageName), 'utf8');
-    console.log(pathToTemp);
+    // console.log(pathToTemp);
     expect(fileContent).not.toMatch(testHtml);
 
     const checkFile = fileName => fs.statSync(path.join(pathToTemp, fileName)).isFile();
