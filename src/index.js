@@ -35,6 +35,12 @@ const builAbsoluteLink = (link, urlHost) => {
   return host ? link : `${urlHost}${link}`;
 };
 
+const isValideLink = (link, urlHost) => {
+  const { host: outerHost } = url.parse(link);
+  const { host: innerHost } = url.parse(urlHost);
+  return outerHost ? outerHost.indexOf(innerHost) !== -1 : true;
+};
+
 const tagsMapping = {
   script: 'src',
   link: 'href',
@@ -49,61 +55,45 @@ const getLinks = (html, urlHost) => {
       const attrb = tagsMapping[tag];
       const links = $(`${tag}[${attrb}]`)
         .map((index, item) => $(item).attr(attrb))
-        .filter((index, item) => {
-          const { host: outerHost } = url.parse(item);
-          const { host: innerHost } = url.parse(urlHost);
-          return outerHost ? outerHost.indexOf(innerHost) !== -1 : true;
-        });
+        .filter((index, item) => isValideLink(item, urlHost));
       return [...links];
     });
   return _.uniq(_.flatten(refs));
 };
 
-const getResourses = (contentHtml, urlQuery) => {
+const getResourses = (contentHtml, urlQuery, pathToAssets) => {
   const links = getLinks(contentHtml, urlQuery);
   return Promise.all(links.map((link) => {
     const absLink = builAbsoluteLink(link, urlQuery);
-    return new Listr([
-      {
-        title: `downloading resourse from: ${link}`,
-        task: () => axios
-          .get(absLink, { responseType: 'arraybuffer' }),
-      }])
-      .run()
-      .then(res =>
-        ({ link, contentAssets: res.data, status: 'downloaded' }))
+    const pathToResourse = path.join(pathToAssets, makeAssetsName(buildRelativeLink(link)));
+    return axios
+      .get(absLink, { responseType: 'arraybuffer' })
+      .then(res => fs.writeFile(pathToResourse, res.data)
+        .then(() => {
+          log(`resourse on ${link} downloaded and written`);
+          return ({ link, status: 'downloaded' });
+        }))
       .catch((err) => {
         responseError(err, absLink, log);
-        return ({ link, contentAssets: `${err.response.status}`, status: 'not downloaded' }); // del
+        return ({ link, status: 'not downloaded' });
       });
   }))
-    .then(resourses => ({ resourses, contentHtml }));
+    .then((resourses) => {
+      const downloadedLinks = resourses
+        .filter(resourse => resourse.status === 'downloaded')
+        .map(({ link }) => link);
+      return ({ downloadedLinks, contentHtml });
+    });
 };
 
-const writeResourses = (resourses, contentHtml, pathToAssets) =>
-  Promise.all(resourses
-    .filter(resourse => resourse.status === 'downloaded')
-    .map(({ link, contentAssets }) => {
-      const pathToResourse = path.join(pathToAssets, makeAssetsName(buildRelativeLink(link)));
-      return fs.writeFile(pathToResourse, contentAssets);
-    }))
-    .then(() => {
-      log('resourses written');
-      const links = resourses.map(({ link }) => link);
-      return ({ links, contentHtml });
-    });
-
-const replaceLinks = (links, contentHtml, pathToHtml, htmlDir) => {
-  let contentHtmlPage = contentHtml;
-
-  links.forEach((link) => {
+const replaceLinks = ({ downloadedLinks, contentHtml }, pathToHtml, htmlDir) => {
+  const newHtml = downloadedLinks.reduce((acc, link) => {
     const replacer = new RegExp(link, 'g');
-    contentHtmlPage = contentHtmlPage
-      .replace(replacer, path.join(htmlDir, makeAssetsName(buildRelativeLink(link))));
-  });
-
-  log('replaced links in html');
-  return fs.writeFile(pathToHtml, contentHtmlPage);
+    const pathReplace = path.join(htmlDir, makeAssetsName(buildRelativeLink(link)));
+    const newAcc = acc.replace(replacer, pathReplace);
+    return newAcc;
+  }, contentHtml);
+  return fs.writeFile(pathToHtml, newHtml);
 };
 
 const createResoursesDir = (pathToAssets) => {
@@ -118,12 +108,9 @@ export default (urlQuery, pathToDir = path.resolve('temp')) => {
   const pathToAssets = path.resolve(pathToDir, htmlDir);
   return axios
     .get(urlQuery)
-    .then(res => fs.writeFile(pathToHtml, res.data))
-    .then(() => createResoursesDir(pathToAssets))
-    .then(() => fs.readFile(pathToHtml, 'utf8'))
-    .then(contentHtml => getResourses(contentHtml, urlQuery))
-    .then(({ resourses, contentHtml }) => writeResourses(resourses, contentHtml, pathToAssets))
-    .then(({ links, contentHtml }) => replaceLinks(links, contentHtml, pathToHtml, htmlDir))
+    .then(res => createResoursesDir(pathToAssets)
+      .then(() => getResourses(res.data, urlQuery, pathToAssets)))
+    .then(resourses => replaceLinks(resourses, pathToHtml, htmlDir))
     .catch((err) => {
       if (err.response) {
         responseError(err, urlQuery);
