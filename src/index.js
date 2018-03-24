@@ -6,9 +6,6 @@ import cheerio from 'cheerio';
 import _ from 'lodash';
 import debug from 'debug';
 
-import AbsoluteLink from './utils/AbsoluteLink';
-import RelativeLink from './utils/RelativeLink';
-
 import { responseError, fsError } from './utils';
 
 const log = debug('page-loader');
@@ -27,12 +24,19 @@ const makeHtmlAndFolder = (urlStr) => {
   return { htmlPageName, htmlDir };
 };
 
-const buildLink = (link, urlHost) => {
-  const { host, pathname } = url.parse(link);
-  const { host: baseHost } = url.parse(urlHost);
-  return host ? new AbsoluteLink(link, baseHost, pathname, host)
-    : new RelativeLink(link, urlHost);
+const buildRelativeLink = (link) => {
+  const { pathname } = url.parse(link);
+  return pathname;
 };
+
+const builAbsoluteLink = (link, urlHost) => {
+  const { host } = url.parse(link);
+  return host ? link : `${urlHost}${link}`;
+};
+
+// const ref = 'http://cdn2.hexlet.io/courses';
+// const ref2 = '/assets/lesson';
+// console.log(builAbsoluteLink(ref2, 'http://hexlet.io/courses'));
 
 const tagsMapping = {
   script: 'src',
@@ -47,11 +51,12 @@ const getLinks = (html, urlHost) => {
     .map((tag) => {
       const attrb = tagsMapping[tag];
       const links = $(`${tag}[${attrb}]`)
-        .map((index, item) => {
-          const attr = $(item).attr(attrb);
-          return buildLink(attr, urlHost);
-        })
-        .filter((index, item) => item.isValidate());
+        .map((index, item) => $(item).attr(attrb))
+        .filter((index, item) => {
+          const { host: outerHost } = url.parse(item);
+          const { host: innerHost } = url.parse(urlHost);
+          return outerHost ? outerHost.indexOf(innerHost) !== -1 : true;
+        });
       return [...links];
     });
   return _.uniq(_.flatten(refs));
@@ -60,25 +65,27 @@ const getLinks = (html, urlHost) => {
 const getResourses = (contentHtml, urlQuery) => {
   const links = getLinks(contentHtml, urlQuery);
   log(`got links: ${links}`);
-  return Promise.all(links.map(link =>
-    axios
-      .get(link.getAbsUrl(), { responseType: 'arraybuffer' })
+  return Promise.all(links.map((link) => {
+    const absLink = builAbsoluteLink(link, urlQuery);
+    return axios
+      .get(absLink, { responseType: 'arraybuffer' })
       .then((res) => {
-        log(`${link.getAbsUrl()}: downloading...`);
+        log(`${absLink}: downloading...`);
         return ({ link, contentAssets: res.data, status: 'downloaded' });
       })
       .catch((err) => {
-        responseError(err, link.getAbsUrl());
+        responseError(err, absLink);
         return ({ link, contentAssets: `${err.response.status}`, status: 'not downloaded' }); // del
-      })))
+      });
+  }))
     .then(resourses => ({ resourses, contentHtml }));
 };
 
 const writeResourses = (resourses, contentHtml, pathToAssets) =>
   Promise.all(resourses
-    .filter(link => link.status === 'downloaded')
+    .filter(resourse => resourse.status === 'downloaded')
     .map(({ link, contentAssets }) => {
-      const pathToResourse = path.join(pathToAssets, makeAssetsName(link.getLocal()));
+      const pathToResourse = path.join(pathToAssets, makeAssetsName(buildRelativeLink(link)));
       return fs.writeFile(pathToResourse, contentAssets);
     }))
     .then(() => {
@@ -91,9 +98,9 @@ const replaceLinks = (links, contentHtml, pathToHtml, htmlDir) => {
   let contentHtmlPage = contentHtml;
 
   links.forEach((link) => {
-    const replacer = new RegExp(link.getOriginLink(), 'g');
+    const replacer = new RegExp(link, 'g');
     contentHtmlPage = contentHtmlPage
-      .replace(replacer, path.join(htmlDir, makeAssetsName(link.getLocal())));
+      .replace(replacer, path.join(htmlDir, makeAssetsName(buildRelativeLink(link))));
   });
 
   log('replaced links in html');
