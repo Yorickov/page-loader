@@ -20,5 +20,6 @@ program
         } else {
           console.error('unexpected error');
         }
+        process.exit(1);
       }))
   .parse(process.argv);

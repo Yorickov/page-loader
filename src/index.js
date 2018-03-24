@@ -5,6 +5,7 @@ import url from 'url';
 import cheerio from 'cheerio';
 import _ from 'lodash';
 import debug from 'debug';
+import Listr from 'Listr'; // eslint-disable-line
 
 import { responseError, fsError } from './utils';
 
@@ -60,15 +61,17 @@ const getLinks = (html, urlHost) => {
 
 const getResourses = (contentHtml, urlQuery) => {
   const links = getLinks(contentHtml, urlQuery);
-  log(`got links: ${links}`);
   return Promise.all(links.map((link) => {
     const absLink = builAbsoluteLink(link, urlQuery);
-    return axios
-      .get(absLink, { responseType: 'arraybuffer' })
-      .then((res) => {
-        log(`${absLink}: downloading...`);
-        return ({ link, contentAssets: res.data, status: 'downloaded' });
-      })
+    return new Listr([
+      {
+        title: `downloading resourse from: ${link}`,
+        task: () => axios
+          .get(absLink, { responseType: 'arraybuffer' }),
+      }])
+      .run()
+      .then(res =>
+        ({ link, contentAssets: res.data, status: 'downloaded' }))
       .catch((err) => {
         responseError(err, absLink, log);
         return ({ link, contentAssets: `${err.response.status}`, status: 'not downloaded' }); // del
@@ -114,7 +117,7 @@ export default (urlQuery, pathToDir = path.resolve('temp')) => {
   const pathToHtml = path.resolve(pathToDir, htmlPageName);
   const pathToAssets = path.resolve(pathToDir, htmlDir);
   return axios
-    .get(urlQuery) // !!!!
+    .get(urlQuery)
     .then(res => fs.writeFile(pathToHtml, res.data))
     .then(() => createResoursesDir(pathToAssets))
     .then(() => fs.readFile(pathToHtml, 'utf8'))

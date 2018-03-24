@@ -1,6 +1,6 @@
 {
   "name": "loader-url",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "",
   "main": "dist/index.js",
   "bin": {
@@ -60,6 +60,7 @@
     "cheerio": "^1.0.0-rc.2",
     "commander": "^2.14.1",
     "debug": "^3.1.0",
+    "listr": "^0.13.0",
     "lodash": "^4.17.5",
     "mz": "^2.7.0"
   }
