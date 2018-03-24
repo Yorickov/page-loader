@@ -29,30 +29,30 @@ const pathToScript = '__tests__/__fixtures__/script.js';
 const scriptName = 'hexlet-io-courses_files/assets-script.js';
 
 describe('load html', () => {
-  const osTempDir = os.tmpdir();
   let pathToTemp;
   let testHtml;
+  const osTempDir = os.tmpdir();
 
   beforeEach(async () => {
     pathToTemp = await fs.mkdtemp(path.join(osTempDir, 'temp'));
     testHtml = await fs.readFile(pathToHtml, 'utf8');
   });
 
-  it('testing...', async () => {
+  it('downloaded succesfully...', async () => {
     nock(host)
       .get(getHtml)
       .replyWithFile(200, pathToHtml)
       .get(getImg)
       .replyWithFile(200, pathToImg)
       .get(getCss)
-      .replyWithFile(200, pathToCss)
+      .reply(200, pathToCss)
       .get(getScript)
       .replyWithFile(200, pathToScript);
 
     await pageLoader(`${host}${getHtml}`, pathToTemp);
 
     const fileContent = await fs.readFile(path.join(pathToTemp, htmlPageName), 'utf8');
-    // console.log(pathToTemp);
+    console.log(pathToTemp);
     expect(fileContent).not.toMatch(testHtml);
 
     const checkFile = fileName => fs.statSync(path.join(pathToTemp, fileName)).isFile();
@@ -63,5 +63,59 @@ describe('load html', () => {
     expect(checkCss).toBeTruthy();
     const checkScript = checkFile(scriptName);
     expect(checkScript).toBeTruthy();
+  });
+
+  it('downloaded not all files...', async () => {
+    nock(host)
+      .get(getHtml)
+      .replyWithFile(200, pathToHtml)
+      .get(getImg)
+      .reply(404)
+      .get(getCss)
+      .reply(503)
+      .get(getScript)
+      .replyWithFile(200, pathToScript);
+
+    await pageLoader(`${host}${getHtml}`, pathToTemp);
+
+    const fileContent = await fs.readFile(path.join(pathToTemp, htmlPageName), 'utf8');
+    // console.log(pathToTemp);
+    expect(fileContent).not.toMatch(testHtml);
+
+    const checkFile = fileName => fs.access(path.join(pathToTemp, fileName));
+
+    const checkScript = checkFile(scriptName);
+    expect(checkScript).toBeTruthy();
+
+    try {
+      await checkFile(imgName);
+    } catch (err) {
+      expect(err.code).toBe('ENOENT');
+    }
+
+    try {
+      await checkFile(cssName);
+    } catch (err) {
+      expect(err.code).toBe('ENOENT');
+    }
+  });
+
+  it('no directory', async () => {
+    nock(host)
+      .get(getHtml)
+      .replyWithFile(200, pathToHtml)
+      .get(getImg)
+      .replyWithFile(200, pathToImg)
+      .get(getCss)
+      .reply(200, pathToCss)
+      .get(getScript)
+      .replyWithFile(200, pathToScript);
+
+    try {
+      await pageLoader(`${host}${getHtml}`, 'false dir');
+      expect(true).toBe(false);
+    } catch (err) {
+      expect(err).toBe('ENOENT');
+    }
   });
 });

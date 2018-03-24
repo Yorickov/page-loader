@@ -13,8 +13,8 @@
     "dist"
   ],
   "scripts": {
-    "test": "jest",
-    "watch": "jest --watch",
+    "test": "DEBUG=page-loader jest",
+    "watch": "DEBUG=page-loader jest --watch",
     "babel-node": "DEBUG=page-loader babel-node",
     "eslint": "eslint",
     "build": "NODE_ENV=production babel src --out-dir dist --source-maps inline",
