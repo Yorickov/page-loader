@@ -11,5 +11,14 @@ program
   .arguments('<url>')
   .option('-o, --output [directory]', 'download url into directory [output]')
   .action((url, option) =>
-    pageLoader(url, option.output))
+    pageLoader(url, option.output)
+      .catch((err) => {
+        if (err.response) {
+          console.error(`${err.response.status}`);
+        } else if (err.code) {
+          console.error(`${err.code}`);
+        } else {
+          console.error('unexpected error');
+        }
+      }))
   .parse(process.argv);

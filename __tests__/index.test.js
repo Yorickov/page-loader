@@ -28,7 +28,7 @@ const getScript = '/courses/assets/script.js';
 const pathToScript = '__tests__/__fixtures__/script.js';
 const scriptName = 'hexlet-io-courses_files/assets-script.js';
 
-describe('load html', () => {
+describe('Testing Load Resourses', () => {
   let pathToTemp;
   let testHtml;
   const osTempDir = os.tmpdir();
@@ -99,23 +99,30 @@ describe('load html', () => {
       expect(err.code).toBe('ENOENT');
     }
   });
+});
 
-  it('no directory', async () => {
+describe('Testing File System Mistakes', () => {
+  it('wrong directory', async () => {
     nock(host)
       .get(getHtml)
-      .replyWithFile(200, pathToHtml)
-      .get(getImg)
-      .replyWithFile(200, pathToImg)
-      .get(getCss)
-      .reply(200, pathToCss)
-      .get(getScript)
-      .replyWithFile(200, pathToScript);
+      .replyWithFile(200, pathToHtml);
 
     try {
-      await pageLoader(`${host}${getHtml}`, 'false dir');
-      expect(true).toBe(false);
+      await pageLoader(`${host}${getHtml}`, 'some_dir');
     } catch (err) {
-      expect(err).toBe('ENOENT');
+      expect(err.code).toBe('ENOENT');
+    }
+  });
+
+  it('directory exist', async () => {
+    nock(host)
+      .get(getHtml)
+      .replyWithFile(200, pathToHtml);
+
+    try {
+      await pageLoader(`${host}${getHtml}`, pathToHtml);
+    } catch (err) {
+      expect(err.code).toBe('ENOTDIR');
     }
   });
 });

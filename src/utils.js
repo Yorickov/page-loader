@@ -22,6 +22,9 @@ export const fsError = (err, fn = console.error) => {
     case 'EEXIST':
       fn('file exists');
       break;
+    case 'ENOTDIR':
+      fn('directory exists');
+      break;
     case 'EISDIR':
       fn('path is directory');
       break;

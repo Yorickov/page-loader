@@ -34,10 +34,6 @@ const builAbsoluteLink = (link, urlHost) => {
   return host ? link : `${urlHost}${link}`;
 };
 
-// const ref = 'http://cdn2.hexlet.io/courses';
-// const ref2 = '/assets/lesson';
-// console.log(builAbsoluteLink(ref2, 'http://hexlet.io/courses'));
-
 const tagsMapping = {
   script: 'src',
   link: 'href',
@@ -74,7 +70,7 @@ const getResourses = (contentHtml, urlQuery) => {
         return ({ link, contentAssets: res.data, status: 'downloaded' });
       })
       .catch((err) => {
-        responseError(err, absLink);
+        responseError(err, absLink, log);
         return ({ link, contentAssets: `${err.response.status}`, status: 'not downloaded' }); // del
       });
   }))
@@ -128,11 +124,11 @@ export default (urlQuery, pathToDir = path.resolve('temp')) => {
     .catch((err) => {
       if (err.response) {
         responseError(err, urlQuery);
+        return Promise.reject(err);
       } else if (err.code) {
-        fsError(err);
-        return Promise.reject(err.code);
-      } else {
-        Promise.reject(err);
+        fsError(err, log);
+        return Promise.reject(err);
       }
+      return Promise.reject(err);
     });
 };
