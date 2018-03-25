@@ -75,22 +75,21 @@ const replaceLink = (link, contentHtml, pathToHtml, htmlDir) => {
 const getResourses = (contentHtml, urlQuery, pathToAssets, pathToHtml, htmlDir) => {
   const links = getLinks(contentHtml, urlQuery);
   let html = contentHtml;
-  log('start downloading resourses');
+  log(`start downloading resourses from url: ${urlQuery}`);
 
   return Promise.all(links.map((link) => {
     const absLink = builAbsoluteLink(link, urlQuery);
     const pathToResourse = path.join(pathToAssets, makeAssetsName(buildRelativeLink(link)));
     return new Listr([
       {
-        title: `downloading resourse from: ${link}`,
+        title: `Downloading resourse ${absLink}`,
         task: () => axios
           .get(absLink, { responseType: 'arraybuffer' })
           .then((res) => {
-            log('resourse downloaded succesfully');
             html = replaceLink(link, html, pathToHtml, htmlDir);
             return fs.writeFile(pathToResourse, res.data);
           })
-          .then(() => log('resourse written')),
+          .then(() => log(`resourse ${link} written to path: ${pathToResourse}`)),
       }])
       .run()
       .catch(err => errorHandler(err, log, absLink));
@@ -101,14 +100,12 @@ const getResourses = (contentHtml, urlQuery, pathToAssets, pathToHtml, htmlDir) 
     });
 };
 
-const createResoursesDir = (pathToAssets) => {
-  log('got html');
-  return fs.mkdir(pathToAssets);
-};
-
 const loadResourses = ({ data }, urlQuery, pathToAssets, pathToHtml, htmlDir) =>
-  createResoursesDir(pathToAssets)
-    .then(() => getResourses(data, urlQuery, pathToAssets, pathToHtml, htmlDir));
+  fs.mkdir(pathToAssets)
+    .then(() => {
+      log(`got html end create folder for assets on path: ${pathToAssets}`);
+      return getResourses(data, urlQuery, pathToAssets, pathToHtml, htmlDir);
+    });
 
 export default (urlQuery, pathToDir = path.resolve('temp')) => {
   log('START');
@@ -118,7 +115,7 @@ export default (urlQuery, pathToDir = path.resolve('temp')) => {
   return axios
     .get(urlQuery)
     .then(res => loadResourses(res, urlQuery, pathToAssets, pathToHtml, htmlDir))
-    .then(() => log(`dowloading of html: ${pathToHtml} completed`))
+    .then(() => log(`SUCCESS! Download from ${urlQuery} completed, path to page: ${pathToHtml}`))
     .catch((err) => {
       errorHandler(err, log, urlQuery);
       return Promise.reject(err);
