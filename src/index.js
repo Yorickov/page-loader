@@ -57,9 +57,9 @@ const getLinks = (html, urlHost) => {
       const links = $(`${tag}[${attrb}]`)
         .map((index, item) => $(item).attr(attrb))
         .filter((index, item) => isValideLink(item, urlHost));
-
       return [...links];
     });
+
   return _.uniq(_.flatten(refs));
 };
 
@@ -75,8 +75,8 @@ const replaceLink = (link, contentHtml, pathToHtml, htmlDir) => {
 const getResourses = (contentHtml, urlQuery, pathToAssets, pathToHtml, htmlDir) => {
   const links = getLinks(contentHtml, urlQuery);
   let html = contentHtml;
-  log(`start downloading resourses from url: ${urlQuery}`);
 
+  log(`start downloading resourses from url: ${urlQuery}`);
   return Promise.all(links.map((link) => {
     const absLink = builAbsoluteLink(link, urlQuery);
     const pathToResourse = path.join(pathToAssets, makeAssetsName(buildRelativeLink(link)));
@@ -84,7 +84,7 @@ const getResourses = (contentHtml, urlQuery, pathToAssets, pathToHtml, htmlDir) 
       {
         title: `Downloading resourse ${absLink}`,
         task: () => axios
-          .get(absLink, { responseType: 'arraybuffer' })
+          .get(absLink, { responseType: 'stream' })
           .then((res) => {
             html = replaceLink(link, html, pathToHtml, htmlDir);
             return fs.writeFile(pathToResourse, res.data);
@@ -96,7 +96,7 @@ const getResourses = (contentHtml, urlQuery, pathToAssets, pathToHtml, htmlDir) 
   }))
     .then(() => {
       log('dowloading completed, start writing html');
-      return fs.writeFile(pathToHtml, html);
+      return html;
     });
 };
 
@@ -107,6 +107,9 @@ const loadResourses = ({ data }, urlQuery, pathToAssets, pathToHtml, htmlDir) =>
       return getResourses(data, urlQuery, pathToAssets, pathToHtml, htmlDir);
     });
 
+const writeHtml = (html, pathToHtml) =>
+  fs.writeFile(pathToHtml, html);
+
 export default (urlQuery, pathToDir = path.resolve('temp')) => {
   log('START');
   const { htmlPageName, htmlDir } = makeHtmlAndFolder(urlQuery);
@@ -115,6 +118,7 @@ export default (urlQuery, pathToDir = path.resolve('temp')) => {
   return axios
     .get(urlQuery)
     .then(res => loadResourses(res, urlQuery, pathToAssets, pathToHtml, htmlDir))
+    .then(html => writeHtml(html, pathToHtml))
     .then(() => log(`SUCCESS! Download from ${urlQuery} completed, path-page: ${pathToHtml} path-resourses: ${pathToAssets}`))
     .catch((err) => {
       errorHandler(err, log, urlQuery);

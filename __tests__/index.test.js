@@ -13,8 +13,9 @@ nock.disableNetConnect();
 const host = 'http://hexlet.io';
 
 const getHtml = '/courses';
-const pathToHtml = '__tests__/__fixtures__/page.html';
-const pathToResultHtml = '__tests__/__fixtures__/pageResult.html';
+const pathToBeforeHtml = '__tests__/__fixtures__/pageBefore.html';
+const pathToAftertHtml = '__tests__/__fixtures__/pageAfter.html';
+const pathToAFterErrHtml = '__tests__/__fixtures__/pageAfterErr.html';
 const htmlPageName = 'hexlet-io-courses.html';
 
 const getImg = '/courses/assets/celt.jpg';
@@ -31,18 +32,16 @@ const scriptName = 'hexlet-io-courses_files/assets-script.js';
 
 describe('Testing Load Resourses', () => {
   let pathToTemp;
-  let testHtml;
   const osTempDir = os.tmpdir();
 
   beforeEach(async () => {
     pathToTemp = await fs.mkdtemp(path.join(osTempDir, 'temp'));
-    testHtml = await fs.readFile(pathToResultHtml, 'utf8');
   });
 
   it('downloaded succesfully...', async () => {
     nock(host)
       .get(getHtml)
-      .replyWithFile(200, pathToHtml)
+      .replyWithFile(200, pathToBeforeHtml)
       .get(getImg)
       .replyWithFile(200, pathToImg)
       .get(getCss)
@@ -50,6 +49,7 @@ describe('Testing Load Resourses', () => {
       .get(getScript)
       .replyWithFile(200, pathToScript);
 
+    const testHtml = await fs.readFile(pathToAftertHtml, 'utf8');
     await pageLoader(`${host}${getHtml}`, pathToTemp);
 
     const fileContent = await fs.readFile(path.join(pathToTemp, htmlPageName), 'utf8');
@@ -69,7 +69,7 @@ describe('Testing Load Resourses', () => {
   it('downloaded not all files...', async () => {
     nock(host)
       .get(getHtml)
-      .replyWithFile(200, pathToHtml)
+      .replyWithFile(200, pathToBeforeHtml)
       .get(getImg)
       .reply(404)
       .get(getCss)
@@ -77,11 +77,12 @@ describe('Testing Load Resourses', () => {
       .get(getScript)
       .replyWithFile(200, pathToScript);
 
+    const testHtml2 = await fs.readFile(pathToAFterErrHtml, 'utf8');
     await pageLoader(`${host}${getHtml}`, pathToTemp);
 
     const fileContent = await fs.readFile(path.join(pathToTemp, htmlPageName), 'utf8');
     console.log(pathToTemp);
-    expect(fileContent).not.toMatch(testHtml);
+    expect(fileContent).toMatch(testHtml2);
 
     const checkFile = fileName => fs.access(path.join(pathToTemp, fileName));
 
@@ -106,7 +107,7 @@ describe('Testing File System Mistakes', () => {
   it('wrong directory', async () => {
     nock(host)
       .get(getHtml)
-      .replyWithFile(200, pathToHtml);
+      .replyWithFile(200, pathToBeforeHtml);
 
     try {
       await pageLoader(`${host}${getHtml}`, 'some_dir');
@@ -118,10 +119,10 @@ describe('Testing File System Mistakes', () => {
   it('directory exist', async () => {
     nock(host)
       .get(getHtml)
-      .replyWithFile(200, pathToHtml);
+      .replyWithFile(200, pathToBeforeHtml);
 
     try {
-      await pageLoader(`${host}${getHtml}`, pathToHtml);
+      await pageLoader(`${host}${getHtml}`, pathToBeforeHtml);
     } catch (err) {
       expect(err.code).toBe('ENOTDIR');
     }

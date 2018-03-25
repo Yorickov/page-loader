@@ -31,7 +31,7 @@ export default (err, fn = console.error, ref = '') => {
         fn(`${ref} failed download, code: ${err.response.status} Server Unavailable`);
         break;
       default:
-        fn(`Mistake with code: ${err.response.code}`);
+        fn(`Mistake with code: ${err.response.status}`);
     }
   } else {
     fn('unnown error');

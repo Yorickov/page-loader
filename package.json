@@ -1,7 +1,7 @@
 {
   "name": "loader-url",
-  "version": "0.6.1",
-  "description": "",
+  "version": "0.7.0",
+  "description": "CLI-app load html page on url into selected directory",
   "main": "dist/index.js",
   "bin": {
     "page-loader": "dist/bin/page-loader.js"
@@ -15,7 +15,7 @@
   "scripts": {
     "test": "DEBUG=page-loader jest",
     "watch": "DEBUG=page-loader jest --watch",
-    "babel-node": "DEBUG=page-loader babel-node",
+    "babel-node": "babel-node",
     "eslint": "eslint",
     "build": "NODE_ENV=production babel src --out-dir dist --source-maps inline",
     "prepublishOnly": "npm run build"
@@ -25,19 +25,24 @@
     "testPathIgnorePatterns": [
       "<rootDir>/node_modules/",
       "<rootDir>/__tests__/__fixtures__/"
-    ]
+    ],
+    "verbose": true,
+    "coverageReporters": [
+      "lcov"
+    ],
+    "collectCoverage": true
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Yorickov/project-lvl3-s194.git"
+    "url": "git+https://github.com/Yorickov/loader-url.git"
   },
   "bugs": {
-    "url": "https://github.com/Yorickov/project-lvl3-s194/issues"
+    "url": "https://github.com/Yorickov/loader-url/issues"
   },
   "keywords": [],
   "author": "Yorickov",
   "license": "ISC",
-  "homepage": "https://github.com/Yorickov/project-lvl3-s194#readme",
+  "homepage": "https://github.com/Yorickov/loader-url#readme",
   "devDependencies": {
     "babel-cli": "*",
     "babel-core": "*",

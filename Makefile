@@ -17,10 +17,10 @@ index:
 test:
 	npm test
 
-watch:
+test-watch:
 	npm test -- --watchAll
 
-coverage:
+test-coverage:
 	npm test -- --coverage
 
 lint:
