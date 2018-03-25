@@ -4,7 +4,7 @@ language: node_js
 
 env:
   global:
-    - CC_TEST_REPORTER_ID=f5797ea2375908dc4df257ffdf7c35a83424242904d62d62e334ea70d233d966
+    - CC_TEST_REPORTER_ID=6895e39388b96324d06915121ca09e1bef916928dab761762b95ed9a5f503abe
 
 node_js:
   - stable
