@@ -5,7 +5,7 @@ import url from 'url';
 import cheerio from 'cheerio';
 import _ from 'lodash';
 import debug from 'debug';
-import Listr from 'Listr'; // eslint-disable-line
+import Listr from 'listr';
 
 import { responseError, fsError } from './utils';
 
@@ -61,56 +61,57 @@ const getLinks = (html, urlHost) => {
   return _.uniq(_.flatten(refs));
 };
 
-const getResourses = (contentHtml, urlQuery, pathToAssets) => {
+const replaceLink = (link, contentHtml, pathToHtml, htmlDir) => {
+  const replacer = new RegExp(link, 'g');
+  const pathReplace = path.join(htmlDir, makeAssetsName(buildRelativeLink(link)));
+  const newHtml = contentHtml.replace(replacer, pathReplace);
+  log(`html updated, new link: ${pathReplace}`);
+  return newHtml;
+};
+
+const getResourses = (contentHtml, urlQuery, pathToAssets, pathToHtml, htmlDir) => {
   const links = getLinks(contentHtml, urlQuery);
+  log('start downloading resourses');
+  let html = contentHtml;
   return Promise.all(links.map((link) => {
     const absLink = builAbsoluteLink(link, urlQuery);
     const pathToResourse = path.join(pathToAssets, makeAssetsName(buildRelativeLink(link)));
-    return axios
-      .get(absLink, { responseType: 'arraybuffer' })
-      .then(res => fs.writeFile(pathToResourse, res.data)
-        .then(() => {
-          log(`resourse on ${link} downloaded and written`);
-          return ({ link, status: 'downloaded' });
-        }))
-      .catch((err) => {
-        responseError(err, absLink, log);
-        return ({ link, status: 'not downloaded' });
-      });
+    return new Listr([
+      {
+        title: `downloading resourse from: ${link}`,
+        task: () => axios
+          .get(absLink, { responseType: 'arraybuffer' })
+          .then((res) => {
+            log('resourse downloaded succesfully');
+            html = replaceLink(link, html, pathToHtml, htmlDir);
+            return fs.writeFile(pathToResourse, res.data);
+          })
+          .then(() => log('resourse written')),
+      }])
+      .run()
+      .catch(err => responseError(err, absLink, log));
   }))
-    .then((resourses) => {
-      const downloadedLinks = resourses
-        .filter(resourse => resourse.status === 'downloaded')
-        .map(({ link }) => link);
-      return ({ downloadedLinks, contentHtml });
+    .then(() => {
+      log('dowloading completed, start writing html');
+      return fs.writeFile(pathToHtml, html);
     });
 };
 
-const replaceLinks = ({ downloadedLinks, contentHtml }, pathToHtml, htmlDir) => {
-  const newHtml = downloadedLinks.reduce((acc, link) => {
-    const replacer = new RegExp(link, 'g');
-    const pathReplace = path.join(htmlDir, makeAssetsName(buildRelativeLink(link)));
-    const newAcc = acc.replace(replacer, pathReplace);
-    return newAcc;
-  }, contentHtml);
-  return fs.writeFile(pathToHtml, newHtml);
-};
-
 const createResoursesDir = (pathToAssets) => {
-  log('got and written html');
+  log('got html');
   return fs.mkdir(pathToAssets);
 };
 
 export default (urlQuery, pathToDir = path.resolve('temp')) => {
-  log('start');
+  log('START');
   const { htmlPageName, htmlDir } = makeHtmlAndFolder(urlQuery);
   const pathToHtml = path.resolve(pathToDir, htmlPageName);
   const pathToAssets = path.resolve(pathToDir, htmlDir);
   return axios
     .get(urlQuery)
     .then(res => createResoursesDir(pathToAssets)
-      .then(() => getResourses(res.data, urlQuery, pathToAssets)))
-    .then(resourses => replaceLinks(resourses, pathToHtml, htmlDir))
+      .then(() => getResourses(res.data, urlQuery, pathToAssets, pathToHtml, htmlDir)))
+    .then(() => log(`dowloading of html: ${pathToHtml} completed`))
     .catch((err) => {
       if (err.response) {
         responseError(err, urlQuery);

@@ -20,7 +20,7 @@ export const responseError = (err, ref, fn = console.error) => {
 export const fsError = (err, fn = console.error) => {
   switch (err.code) {
     case 'EEXIST':
-      fn('file exists');
+      fn('file already exists');
       break;
     case 'ENOTDIR':
       fn('directory exists');

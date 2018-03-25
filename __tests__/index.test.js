@@ -14,6 +14,7 @@ const host = 'http://hexlet.io';
 
 const getHtml = '/courses';
 const pathToHtml = '__tests__/__fixtures__/page.html';
+const pathToResultHtml = '__tests__/__fixtures__/pageResult.html';
 const htmlPageName = 'hexlet-io-courses.html';
 
 const getImg = '/courses/assets/celt.jpg';
@@ -35,7 +36,7 @@ describe('Testing Load Resourses', () => {
 
   beforeEach(async () => {
     pathToTemp = await fs.mkdtemp(path.join(osTempDir, 'temp'));
-    testHtml = await fs.readFile(pathToHtml, 'utf8');
+    testHtml = await fs.readFile(pathToResultHtml, 'utf8');
   });
 
   it('downloaded succesfully...', async () => {
@@ -52,8 +53,8 @@ describe('Testing Load Resourses', () => {
     await pageLoader(`${host}${getHtml}`, pathToTemp);
 
     const fileContent = await fs.readFile(path.join(pathToTemp, htmlPageName), 'utf8');
-    // console.log(pathToTemp);
-    expect(fileContent).not.toMatch(testHtml);
+    console.log(pathToTemp);
+    expect(fileContent).toMatch(testHtml);
 
     const checkFile = fileName => fs.statSync(path.join(pathToTemp, fileName)).isFile();
 
