@@ -68,7 +68,7 @@ const replaceLink = (link, contentHtml, pathToHtml, htmlDir) => {
   const pathReplace = path.join(htmlDir, makeAssetsName(buildRelativeLink(link)));
   const newHtml = contentHtml.replace(replacer, pathReplace);
 
-  log(`html updated, new link: ${pathReplace}`);
+  log(`html updated, old link: ${link}, new link: ${pathReplace}`);
   return newHtml;
 };
 
@@ -82,7 +82,7 @@ const getResourses = (contentHtml, urlQuery, pathToAssets, pathToHtml, htmlDir) 
     const pathToResourse = path.join(pathToAssets, makeAssetsName(buildRelativeLink(link)));
     return new Listr([
       {
-        title: `Downloading resourse ${absLink} to path: ${pathToResourse}`,
+        title: `Downloading resourse ${absLink}`,
         task: () => axios
           .get(absLink, { responseType: 'arraybuffer' })
           .then((res) => {
@@ -115,7 +115,7 @@ export default (urlQuery, pathToDir = path.resolve('temp')) => {
   return axios
     .get(urlQuery)
     .then(res => loadResourses(res, urlQuery, pathToAssets, pathToHtml, htmlDir))
-    .then(() => log(`SUCCESS! Download from ${urlQuery} completed, path to page: ${pathToHtml}`))
+    .then(() => log(`SUCCESS! Download from ${urlQuery} completed, path-page: ${pathToHtml} path-resourses: ${pathToAssets}`))
     .catch((err) => {
       errorHandler(err, log, urlQuery);
       return Promise.reject(err);

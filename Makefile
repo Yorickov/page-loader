@@ -6,10 +6,10 @@ build:
 	npm run build
 
 loader:
-	DEBUG=page-loader page-loader --output /Users/yorickov/projects/js/hexlet/temp https://hexlet.io/courses
+	DEBUG=page-loader page-loader --output /var/tmp https://hexlet.io/courses
 
 start:
-	npm run babel-node -- src/bin/page-loader.js --output /Users/yorickov/projects/js/hexlet/temp https://hexlet.io/courses
+	npm run babel-node -- src/bin/page-loader.js --output /var/tmp https://hexlet.io/courses
 
 index:
 	npm run babel-node -- src/index.js
