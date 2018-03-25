@@ -82,7 +82,7 @@ const getResourses = (contentHtml, urlQuery, pathToAssets, pathToHtml, htmlDir) 
     const pathToResourse = path.join(pathToAssets, makeAssetsName(buildRelativeLink(link)));
     return new Listr([
       {
-        title: `Downloading resourse ${absLink}`,
+        title: `Downloading resourse ${absLink} to path: ${pathToResourse}`,
         task: () => axios
           .get(absLink, { responseType: 'arraybuffer' })
           .then((res) => {
