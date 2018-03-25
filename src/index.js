@@ -50,12 +50,14 @@ const tagsMapping = {
 const getLinks = (html, urlHost) => {
   const $ = cheerio.load(html);
   const tags = Object.keys(tagsMapping);
+
   const refs = tags
     .map((tag) => {
       const attrb = tagsMapping[tag];
       const links = $(`${tag}[${attrb}]`)
         .map((index, item) => $(item).attr(attrb))
         .filter((index, item) => isValideLink(item, urlHost));
+
       return [...links];
     });
   return _.uniq(_.flatten(refs));
@@ -65,14 +67,16 @@ const replaceLink = (link, contentHtml, pathToHtml, htmlDir) => {
   const replacer = new RegExp(link, 'g');
   const pathReplace = path.join(htmlDir, makeAssetsName(buildRelativeLink(link)));
   const newHtml = contentHtml.replace(replacer, pathReplace);
+
   log(`html updated, new link: ${pathReplace}`);
   return newHtml;
 };
 
 const getResourses = (contentHtml, urlQuery, pathToAssets, pathToHtml, htmlDir) => {
   const links = getLinks(contentHtml, urlQuery);
-  log('start downloading resourses');
   let html = contentHtml;
+  log('start downloading resourses');
+
   return Promise.all(links.map((link) => {
     const absLink = builAbsoluteLink(link, urlQuery);
     const pathToResourse = path.join(pathToAssets, makeAssetsName(buildRelativeLink(link)));
@@ -102,6 +106,10 @@ const createResoursesDir = (pathToAssets) => {
   return fs.mkdir(pathToAssets);
 };
 
+const loadResourses = ({ data }, urlQuery, pathToAssets, pathToHtml, htmlDir) =>
+  createResoursesDir(pathToAssets)
+    .then(() => getResourses(data, urlQuery, pathToAssets, pathToHtml, htmlDir));
+
 export default (urlQuery, pathToDir = path.resolve('temp')) => {
   log('START');
   const { htmlPageName, htmlDir } = makeHtmlAndFolder(urlQuery);
@@ -109,8 +117,7 @@ export default (urlQuery, pathToDir = path.resolve('temp')) => {
   const pathToAssets = path.resolve(pathToDir, htmlDir);
   return axios
     .get(urlQuery)
-    .then(res => createResoursesDir(pathToAssets)
-      .then(() => getResourses(res.data, urlQuery, pathToAssets, pathToHtml, htmlDir)))
+    .then(res => loadResourses(res, urlQuery, pathToAssets, pathToHtml, htmlDir))
     .then(() => log(`dowloading of html: ${pathToHtml} completed`))
     .catch((err) => {
       errorHandler(err, log, urlQuery);
