@@ -7,7 +7,7 @@ import _ from 'lodash';
 import debug from 'debug';
 import Listr from 'listr';
 
-import { responseError, fsError } from './utils';
+import errorHandler from './utils';
 
 const log = debug('page-loader');
 
@@ -89,7 +89,7 @@ const getResourses = (contentHtml, urlQuery, pathToAssets, pathToHtml, htmlDir) 
           .then(() => log('resourse written')),
       }])
       .run()
-      .catch(err => responseError(err, absLink, log));
+      .catch(err => errorHandler(err, log, absLink));
   }))
     .then(() => {
       log('dowloading completed, start writing html');
@@ -113,13 +113,7 @@ export default (urlQuery, pathToDir = path.resolve('temp')) => {
       .then(() => getResourses(res.data, urlQuery, pathToAssets, pathToHtml, htmlDir)))
     .then(() => log(`dowloading of html: ${pathToHtml} completed`))
     .catch((err) => {
-      if (err.response) {
-        responseError(err, urlQuery);
-        return Promise.reject(err);
-      } else if (err.code) {
-        fsError(err, log);
-        return Promise.reject(err);
-      }
+      errorHandler(err, log, urlQuery);
       return Promise.reject(err);
     });
 };
