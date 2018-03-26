@@ -7,7 +7,7 @@ import _ from 'lodash';
 import debug from 'debug';
 import Listr from 'listr';
 
-import errorHandler from './utils';
+import { errorHandler, buildRelativeLink, builAbsoluteLink, isValideLink } from './utils';
 
 const log = debug('page-loader');
 
@@ -23,22 +23,6 @@ const makeHtmlAndFolder = (urlStr) => {
   const htmlPageName = `${getPath}.html`;
   const htmlDir = `${getPath}_files`;
   return { htmlPageName, htmlDir };
-};
-
-const buildRelativeLink = (link) => {
-  const { pathname } = url.parse(link);
-  return pathname;
-};
-
-const builAbsoluteLink = (link, urlHost) => {
-  const { host } = url.parse(link);
-  return host ? link : `${urlHost}${link}`;
-};
-
-const isValideLink = (link, urlHost) => {
-  const { host: outerHost } = url.parse(link);
-  const { host: innerHost } = url.parse(urlHost);
-  return outerHost ? outerHost.indexOf(innerHost) !== -1 : true;
 };
 
 const tagsMapping = {
@@ -72,6 +56,8 @@ const replaceLink = (link, contentHtml, pathToHtml, htmlDir) => {
   return newHtml;
 };
 
+const requestPromise = (urlQuery, options) => axios.get(urlQuery, options);
+
 const getResourses = (contentHtml, urlQuery, pathToAssets, pathToHtml, htmlDir) => {
   const links = getLinks(contentHtml, urlQuery);
   let html = contentHtml;
@@ -83,11 +69,10 @@ const getResourses = (contentHtml, urlQuery, pathToAssets, pathToHtml, htmlDir) 
     return new Listr([
       {
         title: `Downloading resourse ${absLink}`,
-        task: () => axios
-          .get(absLink, { responseType: 'stream' })
-          .then((res) => {
+        task: () => requestPromise(absLink, { responseType: 'stream' })
+          .then(({ data }) => {
             html = replaceLink(link, html, pathToHtml, htmlDir);
-            return fs.writeFile(pathToResourse, res.data);
+            return data.pipe(fs.createWriteStream(pathToResourse));
           })
           .then(() => log(`resourse ${link} written to path: ${pathToResourse}`)),
       }])
@@ -115,8 +100,7 @@ export default (urlQuery, pathToDir = path.resolve('temp')) => {
   const { htmlPageName, htmlDir } = makeHtmlAndFolder(urlQuery);
   const pathToHtml = path.resolve(pathToDir, htmlPageName);
   const pathToAssets = path.resolve(pathToDir, htmlDir);
-  return axios
-    .get(urlQuery)
+  return requestPromise(urlQuery)
     .then(res => loadResourses(res, urlQuery, pathToAssets, pathToHtml, htmlDir))
     .then(html => writeHtml(html, pathToHtml))
     .then(() => log(`SUCCESS! Download from ${urlQuery} completed, path-page: ${pathToHtml} path-resourses: ${pathToAssets}`))

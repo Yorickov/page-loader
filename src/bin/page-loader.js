@@ -17,5 +17,6 @@ program
       .catch((err) => {
         errorHandler(err);
         process.exit(1);
-      }))
-  .parse(process.argv);
+      }));
+
+program.parse(process.argv);
