@@ -3,7 +3,7 @@ import commander from 'commander';
 import { description, version } from '../../package.json';
 
 import pageLoader from '..';
-import errorHandler from '../utils';
+import { errorHandler } from '../utils';
 
 const program = commander;
 
