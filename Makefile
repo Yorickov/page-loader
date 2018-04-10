@@ -17,6 +17,9 @@ index:
 test:
 	npm test
 
+test-debug:
+	DEBUG=page-loader npm test
+
 test-watch:
 	npm test -- --watchAll
 
