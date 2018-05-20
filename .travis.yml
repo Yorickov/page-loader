@@ -4,10 +4,10 @@ language: node_js
 
 env:
   global:
-    - CC_TEST_REPORTER_ID=6895e39388b96324d06915121ca09e1bef916928dab761762b95ed9a5f503abe
+    - CC_TEST_REPORTER_ID=e96149fdd94ecfe34f0d3c49badded792ee49619f5be65566713cbdd1f8313cf
 
 node_js:
-  - stable
+  - lts/*
 
 before_script:
   - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
