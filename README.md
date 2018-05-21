@@ -1,8 +1,8 @@
 # page loader
 
 [![Build Status](https://travis-ci.org/Yorickov/page-loader.svg?branch=master)](https://travis-ci.org/Yorickov/page-loader)
-[![Maintainability](https://api.codeclimate.com/v1/badges/055c996cec56e5d54631/maintainability)](https://codeclimate.com/github/Yorickov/page-loader/maintainability)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/055c996cec56e5d54631/test_coverage)](https://codeclimate.com/github/Yorickov/page-loader/test_coverage)
+[![Maintainability](https://api.codeclimate.com/v1/badges/82b7d0694ddd52c16317/maintainability)](https://codeclimate.com/github/Yorickov/page-loader/maintainability)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/82b7d0694ddd52c16317/test_coverage)](https://codeclimate.com/github/Yorickov/page-loader/test_coverage)
 
 CLI-utility, downloads web page with resourses
 
