@@ -35,6 +35,7 @@ CLI-utility, downloads web page with resourses
 `$ page-loader --output [path/to/dir] [url]`
 
 ## Example
+```
 $ page-loader --output /var/tmp https://redmine.org/projects
-
 $ open /var/tmp/redmine-org-projects.html
+```
