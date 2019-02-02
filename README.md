@@ -22,7 +22,7 @@ CLI-utility, downloads web page with resourses
 - error handling
 - debug
 - DOM: basic manipulations
-- asynchronous programming: promises, async/await
+- asynchronous programming: promises
 - HTTP
 - test-driven development: mock/stub
 

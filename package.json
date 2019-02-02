@@ -34,15 +34,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Yorickov/loader-url.git"
+    "url": "git+https://github.com/Yorickov/page-loader.git"
   },
   "bugs": {
-    "url": "https://github.com/Yorickov/loader-url/issues"
+    "url": "https://github.com/Yorickov/page-loader/issues"
   },
   "keywords": [],
   "author": "Yorickov",
   "license": "ISC",
-  "homepage": "https://github.com/Yorickov/loader-url#readme",
+  "homepage": "https://github.com/Yorickov/page-loader#readme",
   "devDependencies": {
     "babel-cli": "*",
     "babel-core": "*",
