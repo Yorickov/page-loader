@@ -1,5 +1,5 @@
 {
-  "name": "loader-url",
+  "name": "page-loader",
   "version": "0.7.2",
   "description": "CLI-app load html page on url into selected directory",
   "main": "dist/index.js",
