@@ -29,7 +29,7 @@ CLI-utility, downloads web page with resourses
 ## Setup
 `make install`
 
-*`npm install -g loader-url`*
+*`npm install -g page-loader`*
 
 ## Usage
 `$ page-loader --output [path/to/dir] [url]`
